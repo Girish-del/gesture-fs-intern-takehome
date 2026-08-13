@@ -95,3 +95,30 @@ class TestAnswerGeneration:
         assert "2,500" in answer or "2500" in answer or "starter" in answer, (
             "Answer should address the pricing question"
         )
+
+
+# ────────────────────────────────
+# Bonus: edge cases and extra coverage
+# ────────────────────────────────
+class TestBonus:
+    def test_empty_question_returns_prompt_message(self, vector_store, llm):
+        result = ask_question(vector_store, llm, "   ")
+        assert result["sources"] == [], "Empty input should retrieve no sources"
+        assert "question" in result["answer"].lower(), (
+            "Empty input should return a user-facing prompt"
+        )
+
+    def test_sources_have_exactly_three_chunks(self, vector_store, llm):
+        result = ask_question(vector_store, llm, "What is the refund policy?")
+        assert len(result["sources"]) == 3, "Retriever should return top-3 chunks"
+
+    def test_unknown_topic_falls_back_gracefully(self, vector_store, llm):
+        result = ask_question(vector_store, llm, "What is the airspeed velocity of a swallow?")
+        assert isinstance(result["answer"], str)
+        assert len(result["answer"]) > 0, "Answer must still be a non-empty string"
+
+    def test_sources_are_all_strings(self, vector_store, llm):
+        result = ask_question(vector_store, llm, "Do you offer content marketing?")
+        assert all(isinstance(s, str) for s in result["sources"]), (
+            "Every source entry should be a string"
+        )
